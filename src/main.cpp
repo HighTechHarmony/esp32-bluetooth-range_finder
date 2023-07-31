@@ -28,11 +28,6 @@ SimpleMap<String, String> *devices = new SimpleMap<String, String>([](String &a,
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 
-void print_to_line(String text);
-// Prints less important devices to the blue part of the screen
-// void print_top_8(void);
-// void print_device_info(String address, String rssi);
-
 // Prints target device address and RSSI at the the top (yellow portion) of the screen (time will be added by update_display())
 void print_to_yellow(String address, String rssi);
 
@@ -81,7 +76,7 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
       }
       
       
-
+      // If we have found our target device, display it at the top (yellow portion) of the screen
       if (strcmp(advertisedDevice.getAddress().toString().c_str(), TARGET_ADDRESS) == 0) 
       { 
         Serial.print ("Found target device: ");
@@ -125,18 +120,7 @@ void setup()
 
   Serial.begin(115200);
   Serial.println("Scanning...");
-
-  // WiFi.mode(WIFI_STA);
-
-  // Initialize the graphics library.
   
-  // u8g2.begin();
-  // u8g2.setFont(u8g2_font_6x10_tf);
-  // u8g2.setFontRefHeightExtendedText();
-  // u8g2.setDrawColor(1);
-  // u8g2.setFontPosTop();
-  // u8g2.setFontDirection(0);
-
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
   if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { 
     Serial.println(F("SSD1306 allocation failed"));
@@ -170,10 +154,7 @@ void setup()
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void  loop()
-{
-    // Obtain network count.
-    
-    // int nNetworkCount = WiFi.scanNetworks();
+{    
     BLEScanResults foundDevices = pBLEScan->start(5); //5 second scan duration
 
     Serial.print("Devices found: ");
@@ -184,14 +165,12 @@ void  loop()
     
     if(foundDevices.getCount() == 0) 
     {
-        // No networks found.
-        
-        
-        // print_to_line("0 devices found.");
+        // No devices found.          
+        // print_to_blue("0 devices found.");
     } 
     else 
     {
-        // Networks found.
+        // Devices found.
         
         char    chBuffer[128];
         char    chEncryption[64];
@@ -200,24 +179,13 @@ void  loop()
         char    chADDR[64];
 
         int intnNetwork;
-        int nNetwork;
-      
-        // Display network count.
+        int nNetwork;      
         
-        // sprintf(chBuffer, "%d devices found:", foundDevices.getCount());
-        // u8g2.drawStr(0, 0, chBuffer);
-        // print_to_line(String(foundDevices.getCount()) + " devices found:");
-
-        // Display the networks.
         Serial.print("Devices found: ");
         Serial.println(foundDevices.getCount());
         Serial.println("Scan done!");
     }
 
-  // This is run in the callback function so there is no delay
-  // print_top_8();
-
-  // Delay.
   
   pBLEScan->clearResults();   // delete results fromBLEScan buffer to release memory
   delay(2000); //wait for 5 seconds before starting a new scan
@@ -226,10 +194,16 @@ void  loop()
 }
 
 
+void print_to_yellow(String address, String rssi)
+{
+      // Add the device info to the first line      
+      display_buffer_yellow += address + " " + rssi + "\n";
+}
+
 
 // This scrolls everything in the screen buffer up one line (eliminating the first line)
 // Then adds the given text to the bottom previously 
-// Then dumps the display buffer to the screen
+
 void print_to_blue(String address, String rssi)
 {
   
@@ -262,23 +236,6 @@ void print_to_blue(String address, String rssi)
 }
 
 
-
-
-void print_device_info(String address, String rssi)
-{
-  Serial.println("Device: " + address + " " + rssi);
-
-  if (address == TARGET_ADDRESS)  
-  { 
-    // Reset the yellow portion of the display
-    display_buffer_yellow = "";
-    // Add the device info to the first line
-    display_buffer_yellow = address + " " + rssi + "\n";
-    last_seen_time = millis();
-    last_seen_rssi = rssi;
-    seen = true;
-  }
-}
 
 void update_display(void) 
 {
